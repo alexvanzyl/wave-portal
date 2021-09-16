@@ -1,8 +1,47 @@
-import React from "react";
 import parse from "html-react-parser";
+import React, { useEffect, useState } from "react";
 // import logo from "./logo.svg";
 
 function App() {
+  const [currentAccount, setCurrentAccount] = useState("");
+
+  const checkIfWalletIsConnected = () => {
+    const { ethereum } = window;
+    if (!ethereum) {
+      console.log("Make sure you have metamask!");
+      return;
+    }
+    console.log("We have the ethereum object", ethereum);
+
+    ethereum.request({ method: "eth_accounts" }).then((accounts: any) => {
+      if (accounts.length === 0) {
+        console.log("No authorized account found");
+      } else {
+        const account = accounts[0];
+        console.log("Found authorized account: ", account);
+
+        setCurrentAccount(account);
+      }
+    });
+  };
+
+  const connectWallet = () => {
+    const { ethereum } = window;
+    if (!ethereum) alert("Get MetaMask!");
+
+    ethereum
+      .request({ method: "eth_requestAccounts" })
+      .then((accounts: any) => {
+        console.log("Connected", accounts[0]);
+        setCurrentAccount(accounts[0]);
+      })
+      .catch((err: any) => console.log(err));
+  };
+
+  useEffect(() => {
+    checkIfWalletIsConnected();
+  }, []);
+
   const messages = [
     {
       id: 0,
@@ -36,6 +75,19 @@ function App() {
             {parse(beerHex)}.
           </p>
         </div>
+
+        {currentAccount ? null : (
+          <div className="text-center mt-10">
+            <button
+              type="button"
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              onClick={connectWallet}
+            >
+              Connect Wallet
+            </button>
+            <p className="text-xs mt-2">Deployed on Rinkeby</p>
+          </div>
+        )}
 
         <div className="mt-10">
           <label
