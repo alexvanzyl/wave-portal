@@ -4,26 +4,42 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 
 contract WavePortal {
-    uint256 totalWaves;
-    mapping(address => uint256) waveCounts;
+    enum MessageType {
+        Wave,
+        Beer
+    }
+
+    struct Message {
+        MessageType messageType;
+        string body;
+    }
+
+    mapping(MessageType => uint256) public totalsByType;
+    Message[] public messages;
 
     constructor() {
-        console.log("Wave to say hi :)");
+        console.log("Wave or send beer :D");
     }
 
-    function wave() public {
-        totalWaves += 1;
-        console.log("%s just waved!", msg.sender);
-        waveCounts[msg.sender] += 1;
+    function sendMessage(MessageType _messageType, string memory _body) public {
+        Message memory message = Message({
+            messageType: _messageType,
+            body: _body
+        });
+
+        messages.push(message);
+        totalsByType[_messageType] += 1;
     }
 
-    function getTotalWaves() public view returns (uint256) {
-        console.log("We have %d total waves", totalWaves);
-        return totalWaves;
+    function getMessages() public view returns (Message[] memory) {
+        return messages;
     }
 
-    function getWaveCount(address _address) public view returns (uint256) {
-        console.log("%s has waved %d times!", _address, waveCounts[_address]);
-        return waveCounts[_address];
+    function getTotalFor(MessageType _messageType)
+        public
+        view
+        returns (uint256)
+    {
+        return totalsByType[_messageType];
     }
 }

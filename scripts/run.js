@@ -9,13 +9,27 @@ async function main() {
   console.log("Contract deployed to:", waveContract.address);
   console.log("Contract deployed by:", owner.address);
 
-  await waveContract.getTotalWaves();
+  // 0 = wave
+  let tx = await waveContract.sendMessage(0, "hello there!");
+  await tx.wait();
 
-  let waveTxn = await waveContract.wave();
-  await waveTxn.wait();
+  // 1 = beer
+  let tx2 = await waveContract.sendMessage(1, "hello there, again!");
+  await tx2.wait();
 
-  await waveContract.getTotalWaves();
-  await waveContract.getWaveCount(owner.address);
+  let tx3 = await waveContract.sendMessage(1, "Me like beer!");
+  await tx3.wait();
+
+  const messages = await waveContract.getMessages();
+  messages.forEach((message) => {
+    console.log({
+      messageType: message[0] === 0 ? "wave" : "beer",
+      body: message[1],
+    });
+  });
+
+  console.log("Total waves: ", (await waveContract.getTotalFor(0)).toString());
+  console.log("Total beers: ", (await waveContract.getTotalFor(1)).toString());
 }
 
 main()
