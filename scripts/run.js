@@ -22,6 +22,10 @@ async function main() {
   let tx = await waveContract.sendMessage(0, "hello there!");
   await tx.wait();
 
+  // 1 = beer
+  let tx2 = await waveContract.sendMessage(1, "hello there!");
+  await tx2.wait();
+
   const messages = await waveContract.getMessages();
   messages.forEach((message) => {
     console.log({
@@ -34,6 +38,7 @@ async function main() {
 
   console.log("Total waves: ", (await waveContract.getTotalFor(0)).toNumber());
   console.log("Total beers: ", (await waveContract.getTotalFor(1)).toNumber());
+  console.log("Latest winner: ", await waveContract.latestWinner());
 
   contractBalance = await hre.ethers.provider.getBalance(waveContract.address);
   console.log(

@@ -7,6 +7,7 @@ contract WavePortal {
     Message[] public messages;
     mapping(MessageType => uint256) public totalsByType;
     mapping(address => uint256) public lastWavedAt;
+    address public latestWinner;
     uint256 private seed;
 
     enum MessageType {
@@ -65,6 +66,7 @@ contract WavePortal {
             );
             (bool success, ) = (msg.sender).call{value: prizeAmount}("");
             require(success, "Failed to withdraw money from contract");
+            latestWinner = msg.sender;
         }
 
         emit NewMessage(msg.sender, block.timestamp, _messageType, _body);
