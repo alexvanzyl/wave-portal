@@ -51,7 +51,7 @@ function App() {
           cy="12"
           r="10"
           stroke="currentColor"
-          stroke-width="4"
+          strokeWidth="4"
         ></circle>
         <path
           className="opacity-75"
@@ -80,8 +80,7 @@ function App() {
         timestamp: message[3].toNumber(),
       };
     });
-
-    setMessages(messagesFormatted);
+    setMessages(messagesFormatted.reverse());
   };
 
   const getStats = async (): Promise<void> => {
@@ -137,21 +136,29 @@ function App() {
     event: React.MouseEvent<HTMLButtonElement>,
     messageType: MessageType
   ): Promise<void> => {
+    event.preventDefault();
+
+    if (!message) {
+      alert("Please write something nice :)");
+      return;
+    }
+
     setIsSendingMessage(true);
     const waveportalContract = getContract();
 
-    const totalWaves = await waveportalContract.getTotalFor(MessageType.Wave);
-    console.log("Total waves: ", totalWaves.toNumber());
-    const totalBeers = await waveportalContract.getTotalFor(MessageType.Beer);
-    console.log("Total beers: ", totalBeers.toNumber());
+    const tx = await waveportalContract.sendMessage(messageType, message);
+    await tx.wait();
 
-    setTimeout(() => {
-      setIsSendingMessage(false);
-    }, 3000);
+    setIsSendingMessage(false);
+    getStats();
+    getMessages();
+    setMessage("");
   };
 
   useEffect(() => {
     checkIfWalletIsConnected();
+    // Disable for on component mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -227,42 +234,37 @@ function App() {
 
           {!currentAccount ? null : (
             <div className="mt-5 flex justify-center">
-              <button
-                type="button"
-                className="shadow-sm inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-2"
-                onClick={(e) => sendMessage(e, MessageType.Wave)}
-                disabled={isSendingMessage}
-              >
-                {!isSendingMessage ? (
-                  <>
+              {!isSendingMessage ? (
+                <>
+                  <button
+                    type="button"
+                    className="shadow-sm inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-2"
+                    onClick={(e) => sendMessage(e, MessageType.Wave)}
+                    disabled={isSendingMessage}
+                  >
                     Say, Hi
                     <div className="ml-1">{parse(waveHex)}</div>
-                  </>
-                ) : (
-                  <div className="flex">
-                    {spinner()}
-                    Sending...
-                  </div>
-                )}
-              </button>
-              <button
-                type="button"
-                className="shadow-sm inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                onClick={(e) => sendMessage(e, MessageType.Beer)}
-                disabled={isSendingMessage}
-              >
-                {!isSendingMessage ? (
-                  <>
+                  </button>
+                  <button
+                    type="button"
+                    className="shadow-sm inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                    onClick={(e) => sendMessage(e, MessageType.Beer)}
+                    disabled={isSendingMessage}
+                  >
                     Send beer
                     <div className="ml-1">{parse(beerHex)}</div>
-                  </>
-                ) : (
-                  <div className="flex">
-                    {spinner()}
-                    Sending...
-                  </div>
-                )}
-              </button>
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="shadow-sm inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  disabled={isSendingMessage}
+                >
+                  {spinner()}
+                  Sending...
+                </button>
+              )}
             </div>
           )}
 
@@ -282,9 +284,13 @@ function App() {
                       <div className="flex items-center justify-between">
                         <h3 className="text-sm font-medium">{message.from}</h3>
                         <p className="text-sm text-gray-500">
-                          {new Intl.DateTimeFormat("en-GB").format(
-                            message.timestamp
-                          )}
+                          {new Intl.DateTimeFormat("en-GB", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: false,
+                          }).format(new Date(message.timestamp * 1000))}
                         </p>
                       </div>
                       <p className="text-sm text-gray-500">{message.body}</p>
