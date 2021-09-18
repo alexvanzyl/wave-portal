@@ -6,6 +6,8 @@ import "hardhat/console.sol";
 contract WavePortal {
     Message[] public messages;
     mapping(MessageType => uint256) public totalsByType;
+    mapping(address => uint256) public lastWavedAt;
+    uint256 private seed;
 
     enum MessageType {
         Wave,
@@ -19,13 +21,25 @@ contract WavePortal {
         uint256 timestamp;
     }
 
-    event NewMessage(address indexed from, uint256 timestamp, string body);
+    event NewMessage(
+        address indexed from,
+        uint256 timestamp,
+        MessageType messageType,
+        string body
+    );
 
-    constructor() {
+    constructor() payable {
         console.log("Wave or send beer :D");
     }
 
     function sendMessage(MessageType _messageType, string memory _body) public {
+        require(
+            lastWavedAt[msg.sender] + 15 minutes < block.timestamp,
+            "Wait 15m"
+        );
+
+        lastWavedAt[msg.sender] = block.timestamp;
+
         totalsByType[_messageType] += 1;
         Message memory message = Message({
             from: msg.sender,
@@ -36,7 +50,24 @@ contract WavePortal {
 
         messages.push(message);
 
-        emit NewMessage(msg.sender, block.timestamp, _body);
+        uint256 randomNumber = (block.difficulty + block.timestamp + seed) %
+            100;
+        console.log("Random # generated %s", randomNumber);
+
+        seed = randomNumber;
+
+        if (randomNumber < 50) {
+            console.log("%s won!", msg.sender);
+            uint256 prizeAmount = 0.0001 ether;
+            require(
+                prizeAmount <= address(this).balance,
+                "Trying to withdraw more money then the contract has."
+            );
+            (bool success, ) = (msg.sender).call{value: prizeAmount}("");
+            require(success, "Failed to withdraw money from contract");
+        }
+
+        emit NewMessage(msg.sender, block.timestamp, _messageType, _body);
     }
 
     function getMessages() public view returns (Message[] memory) {
