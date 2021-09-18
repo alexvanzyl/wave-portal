@@ -62,14 +62,14 @@ function App() {
     );
   };
 
-  const getContract = (): ethers.Contract => {
+  const getContract = (readOnly?: boolean): ethers.Contract => {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    return new ethers.Contract(contractAddress, contractABI, signer);
+    const signerOrProvider = readOnly ? provider : provider.getSigner();
+    return new ethers.Contract(contractAddress, contractABI, signerOrProvider);
   };
 
   const getMessages = async (): Promise<void> => {
-    const waveportalContract = getContract();
+    const waveportalContract = getContract(true);
 
     const messages = await waveportalContract.getMessages();
     const messagesFormatted: Message[] = messages.map((message: Array<any>) => {
@@ -84,7 +84,7 @@ function App() {
   };
 
   const getStats = async (): Promise<void> => {
-    const waveportalContract = getContract();
+    const waveportalContract = getContract(true);
 
     const waveCount = await waveportalContract.getTotalFor(MessageType.Wave);
     const beerCount = await waveportalContract.getTotalFor(MessageType.Beer);
@@ -111,8 +111,6 @@ function App() {
         console.log("Found authorized account: ", account);
 
         setCurrentAccount(account);
-        getStats();
-        getMessages();
       }
     });
   };
@@ -144,7 +142,7 @@ function App() {
     }
 
     setIsSendingMessage(true);
-    const waveportalContract = getContract();
+    const waveportalContract = getContract(false);
 
     const tx = await waveportalContract.sendMessage(messageType, message);
     await tx.wait();
@@ -157,6 +155,8 @@ function App() {
 
   useEffect(() => {
     checkIfWalletIsConnected();
+    getStats();
+    getMessages();
     // Disable for on component mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -189,23 +189,27 @@ function App() {
         )}
 
         <div className="mt-10">
-          <label
-            htmlFor="message"
-            className="block text-sm font-medium text-gray-700 sr-only"
-          >
-            Message
-          </label>
-          <div className="mt-5">
-            <textarea
-              id="message"
-              name="message"
-              rows={4}
-              className="shadow-sm focus:ring-blue-500 focus:border-blue-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md"
-              placeholder="Leave your message here..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            ></textarea>
-          </div>
+          {!currentAccount ? null : (
+            <div>
+              <label
+                htmlFor="message"
+                className="block text-sm font-medium text-gray-700 sr-only"
+              >
+                Message
+              </label>
+              <div className="mt-5">
+                <textarea
+                  id="message"
+                  name="message"
+                  rows={4}
+                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md"
+                  placeholder="Leave your message here..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                ></textarea>
+              </div>
+            </div>
+          )}
 
           <div>
             <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
