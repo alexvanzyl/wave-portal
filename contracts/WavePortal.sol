@@ -35,8 +35,8 @@ contract WavePortal {
 
     function sendMessage(MessageType _messageType, string memory _body) public {
         require(
-            lastWavedAt[msg.sender] + 15 minutes < block.timestamp,
-            "Wait 15m"
+            lastWavedAt[msg.sender] + 3 minutes < block.timestamp,
+            "Wait 3m"
         );
 
         lastWavedAt[msg.sender] = block.timestamp;
