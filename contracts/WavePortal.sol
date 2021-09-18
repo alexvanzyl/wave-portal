@@ -4,31 +4,39 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 
 contract WavePortal {
+    Message[] public messages;
+    mapping(MessageType => uint256) public totalsByType;
+
     enum MessageType {
         Wave,
         Beer
     }
 
     struct Message {
+        address from;
         MessageType messageType;
         string body;
+        uint256 timestamp;
     }
 
-    mapping(MessageType => uint256) public totalsByType;
-    Message[] public messages;
+    event NewMessage(address indexed from, uint256 timestamp, string body);
 
     constructor() {
         console.log("Wave or send beer :D");
     }
 
     function sendMessage(MessageType _messageType, string memory _body) public {
+        totalsByType[_messageType] += 1;
         Message memory message = Message({
+            from: msg.sender,
             messageType: _messageType,
-            body: _body
+            body: _body,
+            timestamp: block.timestamp
         });
 
         messages.push(message);
-        totalsByType[_messageType] += 1;
+
+        emit NewMessage(msg.sender, block.timestamp, _body);
     }
 
     function getMessages() public view returns (Message[] memory) {

@@ -23,13 +23,15 @@ async function main() {
   const messages = await waveContract.getMessages();
   messages.forEach((message) => {
     console.log({
-      messageType: message[0] === 0 ? "wave" : "beer",
-      body: message[1],
+      from: message[0],
+      messageType: message[1] === 0 ? "wave" : "beer",
+      body: message[2],
+      timestamp: message[3].toNumber(),
     });
   });
 
-  console.log("Total waves: ", (await waveContract.getTotalFor(0)).toString());
-  console.log("Total beers: ", (await waveContract.getTotalFor(1)).toString());
+  console.log("Total waves: ", (await waveContract.getTotalFor(0)).toNumber());
+  console.log("Total beers: ", (await waveContract.getTotalFor(1)).toNumber());
 }
 
 main()
